@@ -4,6 +4,7 @@ import math
 import time
 import argparse
 from PIL import Image
+import os
 
 def getFaceBox(net, frame, conf_threshold=0.7):
     frameOpencvDnn = frame.copy()
@@ -43,34 +44,41 @@ genderList = ['Male', 'Female']
 genderNet = cv.dnn.readNet(genderModel, genderProto)
 faceNet = cv.dnn.readNet(faceModel, faceProto)
 
-# Open a video file or an image file or a camera stream
-cap = cv.VideoCapture(args.input if args.input else 0)
-padding = 20
-while cv.waitKey(1) < 0:
-    # Read frame
-    t = time.time()
-    hasFrame, frame = cap.read()
-    if not hasFrame:
-        cv.waitKey()
-        break
+faces = []
 
-    frameFace, bboxes = getFaceBox(faceNet, frame)
-    if not bboxes:
-        print("No face Detected, Checking next frame")
-        continue
+for num, file in enumerate(os.listdir("data")):
 
-    for bbox in bboxes:
-        # print(bbox)
-        face = frame[max(0,bbox[1]-padding):min(bbox[3]+padding,frame.shape[0]-1),max(0,bbox[0]-padding):min(bbox[2]+padding, frame.shape[1]-1)]
+    # Open a video file or an image file or a camera stream
+    print ("now checkout file " + file)
+    cap = cv.VideoCapture("data/"+file if args.input else 0)
+    padding = 20
+    while cv.waitKey(1) < 0:
+        # Read frame
+        hasFrame, frame = cap.read()
+        if not hasFrame:
+            cv.waitKey()
+            break
 
-        blob = cv.dnn.blobFromImage(face, 1.0, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
-        genderNet.setInput(blob)
-        genderPreds = genderNet.forward()
-        gender = genderList[genderPreds[0].argmax()]
-        # print("Gender Output : {}".format(genderPreds))
-        print("Gender : {}, conf = {:.3f}".format(gender, genderPreds[0].max()))
+        frameFace, bboxes = getFaceBox(faceNet, frame)
+        if not bboxes:
+            print("No face Detected, Checking next frame")
+            continue
 
-        img = Image.open(args.input)
-        cropped_img = img.crop(bbox)
-        cropped_img.save("out.bmp")
 
+        for numbox, bbox in enumerate(bboxes):
+            face = frame[max(0,bbox[1]-padding):min(bbox[3]+padding,frame.shape[0]-1),max(0,bbox[0]-padding):min(bbox[2]+padding, frame.shape[1]-1)]
+
+            blob = cv.dnn.blobFromImage(face, 1.0, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
+            genderNet.setInput(blob)
+            genderPreds = genderNet.forward()
+            gender = genderList[genderPreds[0].argmax()]
+            print("Gender : {}, conf = {:.3f}".format(gender, genderPreds[0].max()))
+
+            img = Image.open("data/"+file)
+            cropped_img = img.crop(bbox)
+            img_name = "image" + str(num) + "face" + str(numbox) + ".bmp"
+            cropped_img.save(img_name)
+
+            faces.append({"gender" : gender, "file" : img_name})
+
+print(faces)
