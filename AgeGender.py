@@ -3,6 +3,7 @@ import cv2 as cv
 import math
 import time
 import argparse
+from PIL import Image
 
 def getFaceBox(net, frame, conf_threshold=0.7):
     frameOpencvDnn = frame.copy()
@@ -23,7 +24,6 @@ def getFaceBox(net, frame, conf_threshold=0.7):
             bboxes.append([x1, y1, x2, y2])
             cv.rectangle(frameOpencvDnn, (x1, y1), (x2, y2), (0, 255, 0), int(round(frameHeight/150)), 8)
     return frameOpencvDnn, bboxes
-
 
 parser = argparse.ArgumentParser(description='Use this script to run gender recognition using OpenCV.')
 parser.add_argument('--input', help='Path to input image or video file. Skip this argument to capture frames from a camera.')
@@ -70,8 +70,7 @@ while cv.waitKey(1) < 0:
         # print("Gender Output : {}".format(genderPreds))
         print("Gender : {}, conf = {:.3f}".format(gender, genderPreds[0].max()))
 
-        label = "{}".format(gender)
-        cv.putText(frameFace, label, (bbox[0], bbox[1]-10), cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2, cv.LINE_AA)
-        cv.imshow("Gender Demo", frameFace)
-        # cv.imwrite("age-gender-out-{}".format(args.input),frameFace)
-    print("time : {:.3f}".format(time.time() - t))
+        img = Image.open(args.input)
+        cropped_img = img.crop(bbox)
+        cropped_img.save("out.bmp")
+
