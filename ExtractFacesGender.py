@@ -88,4 +88,4 @@ def extractFaces(folder):
 
     return faces
 
-extractFaces(args.input)
+print(extractFaces(args.input))
