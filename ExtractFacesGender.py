@@ -22,7 +22,6 @@ genderList = ['Male', 'Female']
 genderNet = cv.dnn.readNet(genderModel, genderProto)
 faceNet = cv.dnn.readNet(faceModel, faceProto)
 
-
 def getFaceBox(net, frame, conf_threshold=0.7):
     frameOpencvDnn = frame.copy()
     frameHeight = frameOpencvDnn.shape[0]
@@ -72,7 +71,12 @@ def extractFaces(folder):
                 face = frame[max(0, bbox[1] - padding):min(bbox[3] + padding, frame.shape[0] - 1),
                        max(0, bbox[0] - padding):min(bbox[2] + padding, frame.shape[1] - 1)]
 
-                blob = cv.dnn.blobFromImage(face, 1.0, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
+                try:
+                    blob = cv.dnn.blobFromImage(face, 1.0, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
+                except:
+                    print("error processing the face")
+                    break
+
                 genderNet.setInput(blob)
                 genderPreds = genderNet.forward()
                 gender = genderList[genderPreds[0].argmax()]
